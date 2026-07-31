@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 )
@@ -12,15 +11,25 @@ type Config struct {
 	CurrentUserName string `json:"current_user_name"`
 }
 
-func Read() (Config, error) {
+func getConfigPath() (string, error) {
 	config, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatal(err)
 	}
-	data, err := os.ReadFile(config)
+
+	path := config + "/.gatorconfig.json"
+
+	return path, nil
+}
+
+func Read() (Config, error) {
+
+	path, err := getConfigPath()
 	if err != nil {
 		return Config{}, err
 	}
+
+	data, err := os.ReadFile(path)
 
 	var cfg Config
 	if err := json.Unmarshal(data, &cfg); err != nil {
@@ -31,6 +40,15 @@ func Read() (Config, error) {
 
 }
 
-func SetUser(c Config) {
-	c.CurrentUserName = fmt.Sprintf("")
+func (c *Config) SetUser(name string) error {
+	c.CurrentUserName = name
+	data, err := json.Marshal(c)
+	if err != nil {
+		return err
+	}
+
+	path, err := getConfigPath()
+
+	err = os.WriteFile(path, data, 0644)
+	return nil
 }
