@@ -19,7 +19,7 @@ func parseCommands(args []string) (command, error) {
 	if len(args) < 2 {
 		return command{}, fmt.Errorf("usage: gator <command> [args...]")
 	}
-	return command{Name: args[1], Args: args[:2]}, nil
+	return command{Name: args[1], Args: args[2:]}, nil
 }
 
 func handlerLogin(s *state, cmd command) error {
