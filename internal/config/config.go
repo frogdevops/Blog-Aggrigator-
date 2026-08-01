@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 )
@@ -44,11 +45,14 @@ func (c *Config) SetUser(name string) error {
 	c.CurrentUserName = name
 	data, err := json.Marshal(c)
 	if err != nil {
-		return err
+		return fmt.Errorf("marshal config: %w", err)
 	}
-
 	path, err := getConfigPath()
-
-	err = os.WriteFile(path, data, 0644)
+	if err != nil {
+		return fmt.Errorf("get config path: %w", err)
+	}
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		return fmt.Errorf("write config: %w", err)
+	}
 	return nil
 }
