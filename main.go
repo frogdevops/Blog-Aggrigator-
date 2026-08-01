@@ -28,6 +28,7 @@ func main() {
 	cmds := commands{registry: make(map[string]func(*state, command) error)}
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
+	cmds.register("reset", handlerReset)
 
 	cmd, err := parseCommands(os.Args)
 	if err != nil {

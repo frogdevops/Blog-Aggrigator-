@@ -25,14 +25,11 @@ type commands struct {
 }
 
 func (c *commands) run(s *state, cmd command) error {
-	switch cmd.Name {
-	case "login":
-		return handlerLogin(s, cmd)
-	case "register":
-		return handlerRegister(s, cmd)
-
+	handler, ok := c.registry[cmd.Name]
+	if !ok {
+		return fmt.Errorf("unknown command: %s", cmd.Name)
 	}
-	return nil
+	return handler(s, cmd)
 }
 
 func (c *commands) register(name string, f func(*state, command) error) {
@@ -50,10 +47,16 @@ func handlerLogin(s *state, cmd command) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: login <username>")
 	}
-	if err := s.cfg.SetUser(cmd.Args[0]); err != nil {
+	name := cmd.Args[0]
+	user, err := s.db.GetUser(context.Background(), name)
+	if err != nil {
+		return fmt.Errorf("user %s not found: %w", name, err)
+	}
+	if err := s.cfg.SetUser(user.Name); err != nil {
 		return fmt.Errorf("set user: %w", err)
 	}
-	fmt.Println("user has been set")
+
+	fmt.Printf("logged in as %s\n", user.Name)
 	return nil
 }
 
@@ -79,5 +82,13 @@ func handlerRegister(s *state, cmd command) error {
 		return fmt.Errorf("create user: %w", err)
 	}
 	fmt.Printf("user %s created\n", user.Name)
+	return nil
+}
+
+func handlerReset(s *state, cmd command) error {
+	if err := s.db.Reset(context.Background()); err != nil {
+		return fmt.Errorf("reset: %w", err)
+	}
+	fmt.Println("all users has been deleted.")
 	return nil
 }
