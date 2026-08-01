@@ -85,7 +85,7 @@ func handlerRegister(s *state, cmd command) error {
 	return nil
 }
 
-func handlerReset(s *state, cmd command) error {
+func handlerReset(s *state, _ command) error {
 	if err := s.db.Reset(context.Background()); err != nil {
 		return fmt.Errorf("reset: %w", err)
 	}
@@ -93,7 +93,7 @@ func handlerReset(s *state, cmd command) error {
 	return nil
 }
 
-func handlerGetUsers(s *state, cmd command) error {
+func handlerGetUsers(s *state, _ command) error {
 	users, err := s.db.GetUsers(context.Background())
 	if err != nil {
 		return fmt.Errorf("get users: %w", err)
@@ -109,7 +109,7 @@ func handlerGetUsers(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAgg(s *state, cmd command) error {
+func handlerAgg(_ *state, _ command) error {
 	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
 	if err != nil {
 		fmt.Errorf("fetch error: %w", err)
@@ -144,5 +144,17 @@ func handlerAddfeed(s *state, cmd command) error {
 	}
 
 	fmt.Printf("%+v\n", feed)
+	return nil
+}
+
+func handlerFeeds(s *state, _ command) error {
+	feed, err := s.db.GetFeeds(context.Background())
+	if err != nil {
+		fmt.Errorf("%w", err)
+	}
+	for _, f := range feed {
+		fmt.Printf("%s\n%s\n%s\n", f.FeedName, f.FeedUrl, f.UserName)
+
+	}
 	return nil
 }
