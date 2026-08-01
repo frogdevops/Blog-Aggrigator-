@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -143,6 +145,18 @@ func handlerAddfeed(s *state, cmd command) error {
 		return fmt.Errorf("%w", err)
 	}
 
+	follow, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		UserID:    user.ID,
+		FeedID:    feed.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+	fmt.Printf("%s is now following %s\n", follow.UserName, follow.FeedName)
+
 	fmt.Printf("%+v\n", feed)
 	return nil
 }
@@ -150,11 +164,58 @@ func handlerAddfeed(s *state, cmd command) error {
 func handlerFeeds(s *state, _ command) error {
 	feed, err := s.db.GetFeeds(context.Background())
 	if err != nil {
-		fmt.Errorf("%w", err)
+		return fmt.Errorf("%w", err)
 	}
 	for _, f := range feed {
 		fmt.Printf("%s\n%s\n%s\n", f.FeedName, f.FeedUrl, f.UserName)
 
+	}
+	return nil
+}
+
+func handlerFollow(s *state, cmd command) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("usage: follow <url>")
+	}
+
+	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	url := cmd.Args[0]
+	feed, err := s.db.GetFeed(context.Background(), url)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("no feed with url %s — add it first", url)
+		}
+		return fmt.Errorf("get feed: %w", err)
+	}
+
+	dbParams := database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		UserID:    user.ID,
+		FeedID:    feed.ID,
+	}
+
+	follow, err := s.db.CreateFeedFollow(context.Background(), dbParams)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+	fmt.Printf("%s is now following %s\n", follow.UserName, follow.FeedName)
+	return nil
+}
+
+func handlerFollowing(s *state, cmd command) error {
+	follows, err := s.db.GetFeedFollowsForUser(context.Background(), s.cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	for _, f := range follows {
+		fmt.Println(f.FeedName)
 	}
 	return nil
 }
