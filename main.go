@@ -12,6 +12,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	data.SetUser("Jan")
+
 	fmt.Println(data)
 }
