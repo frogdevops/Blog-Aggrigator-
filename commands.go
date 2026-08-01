@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/frogdevops/gator/internal/config"
+	"github.com/frogdevops/gator/internal/database"
+	"github.com/google/uuid"
 )
 
 type state struct {
+	db  *database.Queries
 	cfg *config.Config
 }
 
@@ -24,6 +29,7 @@ func (c *commands) run(s *state, cmd command) error {
 	case "login":
 		return handlerLogin(s, cmd)
 	case "register":
+		return handlerRegister(s, cmd)
 
 	}
 	return nil
@@ -48,5 +54,30 @@ func handlerLogin(s *state, cmd command) error {
 		return fmt.Errorf("set user: %w", err)
 	}
 	fmt.Println("user has been set")
+	return nil
+}
+
+func handlerRegister(s *state, cmd command) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("usage: register <name>")
+	}
+
+	name := cmd.Args[0]
+
+	dbParam := database.CreateUserParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		Name:      name,
+	}
+
+	user, err := s.db.CreateUser(context.Background(), dbParam)
+	if err != nil {
+		return fmt.Errorf("create user: %w", err)
+	}
+	if err := s.cfg.SetUser(user.Name); err != nil {
+		return fmt.Errorf("create user: %w", err)
+	}
+	fmt.Printf("user %s created\n", user.Name)
 	return nil
 }
