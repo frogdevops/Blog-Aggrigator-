@@ -29,6 +29,7 @@ func main() {
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
 	cmds.register("reset", handlerReset)
+	cmds.register("list", handlerGetUsers)
 
 	cmd, err := parseCommands(os.Args)
 	if err != nil {
