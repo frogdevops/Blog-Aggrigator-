@@ -37,7 +37,6 @@ func parseCommands(args []string) (command, error) {
 	if len(args) < 2 {
 		return command{}, fmt.Errorf("usage: gator <command> [args...]")
 	}
-	fmt.Println("user has been set")
 	return command{Name: args[1], Args: args[2:]}, nil
 }
 
@@ -48,5 +47,6 @@ func handlerLogin(s *state, cmd command) error {
 	if err := s.cfg.SetUser(cmd.Args[0]); err != nil {
 		return fmt.Errorf("set user: %w", err)
 	}
+	fmt.Println("user has been set")
 	return nil
 }
