@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/frogdevops/gator/internal/config"
@@ -111,13 +112,45 @@ func handlerGetUsers(s *state, _ command) error {
 	return nil
 }
 
-func handlerAgg(_ *state, _ command) error {
-	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+func scrapeFeeds(s *state) {
+	feed, err := s.db.GetNextFeedToFetch(context.Background())
 	if err != nil {
-		fmt.Errorf("fetch error: %w", err)
+		log.Printf("get next feed: %v", err)
+		return
 	}
-	fmt.Printf("%+v\n", feed)
-	return nil
+
+	if err := s.db.MarkFeedFetched(context.Background(), feed.ID); err != nil {
+		log.Printf("mark feed %s fetched: %v", feed.Name, err)
+		return
+	}
+
+	rss, err := fetchFeed(context.Background(), feed.Url)
+	if err != nil {
+		log.Printf("fetch %s: %v", feed.Url, err)
+		return
+	}
+	fmt.Printf("=== %s ===\n", feed.Name)
+	for _, item := range rss.Channel.Item {
+		fmt.Printf("  %s\n", item.Title)
+	}
+}
+
+func handlerAgg(s *state, cmd command) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("usage: agg <time_between_reqs>")
+	}
+	time_between_request, err := time.ParseDuration(cmd.Args[0])
+	if err != nil {
+		return fmt.Errorf("invalid duration %q: %w", cmd.Args[0], err)
+	}
+	fmt.Printf("Collecting feeds every %s\n", time_between_request)
+
+	ticker := time.NewTicker(time_between_request)
+
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
+	}
+
 }
 
 func handlerAddfeed(s *state, cmd command, user database.User) error {
@@ -217,5 +250,23 @@ func handlerFollowing(s *state, _ command, user database.User) error {
 	for _, f := range follows {
 		fmt.Println(f.FeedName)
 	}
+	return nil
+}
+
+func handlerUnfollow(s *state, cmd command, user database.User) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("usage: unfollow <url>")
+	}
+
+	dbParams := database.DeleteFeedFollowParams{
+		UserID: user.ID,
+		Url:    cmd.Args[0],
+	}
+
+	if err := s.db.DeleteFeedFollow(context.Background(), dbParams); err != nil {
+		return fmt.Errorf("unfollow: %w", err)
+	}
+
+	fmt.Printf("unfollowed %s\n", cmd.Args[0])
 	return nil
 }

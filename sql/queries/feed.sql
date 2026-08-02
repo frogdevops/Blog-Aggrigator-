@@ -28,3 +28,20 @@ FROM feed_follows
          JOIN feed ON feed_follows.feed_id = feed.id
          JOIN users ON feed_follows.user_id = users.id
 WHERE users.name = $1;
+
+-- name: DeleteFeedFollow :exec
+DELETE FROM feed_follows
+    USING feed
+WHERE feed_follows.feed_id = feed.id
+  AND feed_follows.user_id = $1
+  AND feed.url = $2;
+
+-- name: MarkFeedFetched :exec
+UPDATE feed
+SET updated_at = NOW(), last_fetch_at = NOW()
+WHERE id = $1;
+
+-- name: GetNextFeedToFetch :one
+SELECT * FROM feed
+ORDER BY last_fetch_at ASC NULLS FIRST
+LIMIT 1;
