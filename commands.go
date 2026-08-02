@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/frogdevops/gator/internal/config"
@@ -129,9 +130,27 @@ func scrapeFeeds(s *state) {
 		log.Printf("fetch %s: %v", feed.Url, err)
 		return
 	}
-	fmt.Printf("=== %s ===\n", feed.Name)
+
 	for _, item := range rss.Channel.Item {
-		fmt.Printf("  %s\n", item.Title)
+		publishedAt := sql.NullTime{}
+		if t, err := time.Parse(time.RFC1123Z, item.PubDate); err == nil {
+			publishedAt = sql.NullTime{Time: t, Valid: true}
+		}
+
+		dbParams := database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   time.Now().UTC(),
+			UpdatedAt:   time.Now().UTC(),
+			Title:       item.Title,
+			Url:         item.Link,
+			Description: item.Description,
+			PublishedAt: publishedAt,
+			FeedID:      feed.ID,
+		}
+
+		if err := s.db.CreatePost(context.Background(), dbParams); err != nil {
+			log.Printf("create post %s: %v", item.Link, err)
+		}
 	}
 }
 
@@ -268,5 +287,32 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 	}
 
 	fmt.Printf("unfollowed %s\n", cmd.Args[0])
+	return nil
+}
+
+func handlerBrowse(s *state, cmd command, user database.User) error {
+	limit := 2
+	if len(cmd.Args) == 1 {
+		n, err := strconv.Atoi(cmd.Args[0])
+		if err != nil {
+			return fmt.Errorf("invalid limit %q: %w", cmd.Args[0], err)
+		}
+		limit = n
+	}
+	posts, err := s.db.GetPostsForUser(context.Background(), database.GetPostsForUserParams{
+		UserID: user.ID,
+		Limit:  int32(limit),
+	})
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+	for _, post := range posts {
+		if post.PublishedAt.Valid {
+			fmt.Printf("  %s\n", post.PublishedAt.Time.Format("2006-01-02"))
+		}
+		fmt.Printf("%s\n", post.Title)
+		fmt.Printf("  %s\n", post.Url)
+		fmt.Println()
+	}
 	return nil
 }

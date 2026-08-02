@@ -3,11 +3,13 @@
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/sql/queries/feed.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/sql/queries/follows.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/sql/queries/post.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/sql/queries/users.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/sql/schema/001_users.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/sql/schema/002_feed.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/sql/schema/003_follow.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/sql/schema/004_last_fetch_at.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/sql/schema/005_post.sql" dialect="PostgreSQL" />
   </component>
   <component name="SqlResolveMappings">
     <file url="file://$PROJECT_DIR$/sql/queries" scope="{&quot;node&quot;:{  &quot;@negative&quot;:&quot;1&quot;,  &quot;group&quot;:{   &quot;@kind&quot;:&quot;root&quot;,   &quot;node&quot;:{    &quot;@negative&quot;:&quot;1&quot;   }  } }}" />
