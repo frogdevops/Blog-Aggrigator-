@@ -31,10 +31,10 @@ func main() {
 	cmds.register("reset", handlerReset)
 	cmds.register("users", handlerGetUsers)
 	cmds.register("agg", handlerAgg)
-	cmds.register("addfeed", handlerAddfeed)
+	cmds.register("addfeed", middlewareLoggedIn(handlerAddfeed))
 	cmds.register("feeds", handlerFeeds)
-	cmds.register("follow", handlerFollow)
-	cmds.register("following", handlerFollowing)
+	cmds.register("follow", middlewareLoggedIn(handlerFollow))
+	cmds.register("following", middlewareLoggedIn(handlerFollowing))
 
 	cmd, err := parseCommands(os.Args)
 	if err != nil {
